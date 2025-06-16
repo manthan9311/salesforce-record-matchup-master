@@ -1,0 +1,40 @@
+
+{
+  "manifest_version": 3,
+  "name": "Salesforce Record Comparator",
+  "version": "1.0",
+  "description": "Compare two Salesforce records across Classic and Lightning interfaces",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.salesforce.com/*",
+    "https://*.force.com/*",
+    "https://*.lightning.force.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Salesforce Record Comparator"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.salesforce.com/*",
+        "https://*.force.com/*",
+        "https://*.lightning.force.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
