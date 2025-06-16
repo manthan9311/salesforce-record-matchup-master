@@ -32,6 +32,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+    // Copy additional files needed for Chrome extension
+    copyPublicDir: true,
   },
   publicDir: 'public',
 }));
