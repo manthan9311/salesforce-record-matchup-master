@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 
 interface RecordData {
   id: string;
@@ -36,21 +34,25 @@ const SalesforceComparator = () => {
     loadStoredRecords();
     
     // Get current tab info
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.url) {
-        setCurrentTab(tabs[0].url);
-      }
-    });
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.url) {
+          setCurrentTab(tabs[0].url);
+        }
+      });
+    }
   }, []);
 
   const loadStoredRecords = async () => {
     try {
-      const result = await chrome.storage.local.get(['sourceRecord', 'targetRecord']);
-      if (result.sourceRecord) {
-        setSourceRecord(result.sourceRecord);
-      }
-      if (result.targetRecord) {
-        setTargetRecord(result.targetRecord);
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.local.get(['sourceRecord', 'targetRecord']);
+        if (result.sourceRecord) {
+          setSourceRecord(result.sourceRecord);
+        }
+        if (result.targetRecord) {
+          setTargetRecord(result.targetRecord);
+        }
       }
     } catch (err) {
       console.error('Error loading stored records:', err);
@@ -62,7 +64,10 @@ const SalesforceComparator = () => {
     setError('');
     
     try {
-      // Inject content script to get record ID
+      if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
+        throw new Error('Chrome extension APIs not available');
+      }
+
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
       const result = await chrome.scripting.executeScript({
@@ -73,11 +78,12 @@ const SalesforceComparator = () => {
       if (result[0]?.result) {
         const recordInfo = result[0].result;
         
-        // Fetch record data via API
         const recordData = await fetchRecordData(recordInfo);
         
         setSourceRecord(recordData);
-        await chrome.storage.local.set({ sourceRecord: recordData });
+        if (chrome.storage) {
+          await chrome.storage.local.set({ sourceRecord: recordData });
+        }
       } else {
         setError('Could not detect Salesforce record on this page');
       }
@@ -93,6 +99,10 @@ const SalesforceComparator = () => {
     setError('');
     
     try {
+      if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.scripting) {
+        throw new Error('Chrome extension APIs not available');
+      }
+
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
       const result = await chrome.scripting.executeScript({
@@ -106,7 +116,9 @@ const SalesforceComparator = () => {
         const recordData = await fetchRecordData(recordInfo);
         
         setTargetRecord(recordData);
-        await chrome.storage.local.set({ targetRecord: recordData });
+        if (chrome.storage) {
+          await chrome.storage.local.set({ targetRecord: recordData });
+        }
       } else {
         setError('Could not detect Salesforce record on this page');
       }
@@ -164,7 +176,9 @@ const SalesforceComparator = () => {
     setSourceRecord(null);
     setTargetRecord(null);
     setComparison(null);
-    await chrome.storage.local.remove(['sourceRecord', 'targetRecord']);
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      await chrome.storage.local.remove(['sourceRecord', 'targetRecord']);
+    }
   };
 
   const formatValue = (value: any): string => {
